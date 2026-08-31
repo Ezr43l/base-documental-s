@@ -2,6 +2,8 @@
 
 ## [0.4.2] - 2026-09-01
 
+- desactivado el mantenimiento Git automático en segundo plano para que no compita con
+  backups, migraciones ni la retirada de repositorios efímeros;
 - exportación pública desde el snapshot inmutable de `HEAD`, con regeneración del manifiesto
   al reexportar un árbol público y publicación atómica sin sobrescritura;
 - lectura de secretos limitada a ficheros regulares, pequeños, sin symlinks ni hardlinks y

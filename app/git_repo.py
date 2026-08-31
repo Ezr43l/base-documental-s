@@ -53,6 +53,11 @@ class GitRepository:
             if not (self.repository_dir / ".git").is_dir():
                 self._run(["init"])
                 self._run(["branch", "-M", "main"])
+            # La proyección ya serializa todas las operaciones. Evitar procesos de
+            # mantenimiento en segundo plano impide carreras con backups, migraciones
+            # y la retirada de repositorios efímeros durante las pruebas.
+            self._run(["config", "maintenance.auto", "false"])
+            self._run(["config", "gc.auto", "0"])
             self._run(["config", "user.name", self.author_name])
             self._run(["config", "user.email", self.author_email])
             readme = self.repository_dir / "README.md"
