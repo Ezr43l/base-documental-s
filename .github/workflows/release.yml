@@ -405,12 +405,21 @@ jobs:
             "${release_flags[@]}"
 
           release_pages="$RUNNER_TEMP/release-pages.json"
-          gh api --paginate --slurp -H "$api_header" \
-            "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > "$release_pages"
-          release_id="$(jq -er --arg tag "$GITHUB_REF_NAME" \
-            '[.[][] | select(.tag_name == $tag)] |
-             if length == 1 then .[0].id else error("draft unico no encontrado") end' \
-            "$release_pages")"
+          release_id=""
+          for attempt in 1 2 3 4 5; do
+            gh api --paginate --slurp -H "$api_header" \
+              "repos/${GITHUB_REPOSITORY}/releases?per_page=100" > "$release_pages"
+            release_id="$(jq -r --arg tag "$GITHUB_REF_NAME" \
+              '[.[][] | select(.tag_name == $tag)] |
+               if length == 1 then .[0].id else empty end' \
+              "$release_pages")"
+            [[ "$release_id" =~ ^[1-9][0-9]*$ ]] && break
+            sleep 2
+          done
+          [[ "$release_id" =~ ^[1-9][0-9]*$ ]] || {
+            echo "No se pudo resolver un único draft para ${GITHUB_REF_NAME}" >&2
+            exit 1
+          }
           draft_json="$RUNNER_TEMP/release-draft.json"
           published_json="$RUNNER_TEMP/release-published.json"
           gh api -H "$api_header" \
