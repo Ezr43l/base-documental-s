@@ -1,0 +1,76 @@
+name: rtfm
+
+services:
+  rtfm:
+    image: ${RTFM_IMAGE:-rtfm:0.4.2}
+    build:
+      context: .
+      args:
+        VERSION: ${RTFM_BUILD_VERSION:-0.4.2}
+        SOURCE_URL: ${RTFM_SOURCE_URL:-https://github.com/Ezr43l/base-documental-s}
+        LICENSE: ${RTFM_LICENSE_SPDX:-Apache-2.0}
+    container_name: ${RTFM_CONTAINER_NAME:-rtfm}
+    restart: unless-stopped
+    init: true
+    network_mode: host
+    env_file:
+      - path: ${RTFM_ENV_FILE:-.env}
+        required: false
+    environment:
+      DATA_DIR: /data
+      PORT: ${PORT:-7400}
+      NODE_NAME: ${NODE_NAME:-local}
+      ROLE_MODE: ${ROLE_MODE:-auto}
+      PUBLIC_SCHEME: ${PUBLIC_SCHEME:-http}
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-127.0.0.1}
+      FLOATING_IP: ${FLOATING_IP:-}
+      FLOATING_URL: ${FLOATING_URL:-}
+      KEEPALIVED_API_URL: ${KEEPALIVED_API_URL:-}
+      KEEPALIVED_API_KEY: ${KEEPALIVED_API_KEY:-}
+      KEEPALIVED_API_KEY_FILE: ${KEEPALIVED_API_KEY_FILE:-}
+      KEEPALIVED_SERVICE: ${KEEPALIVED_SERVICE:-rtfm}
+      KEEPALIVED_DESCRIPTION: ${KEEPALIVED_DESCRIPTION:-RTFM}
+      KEEPALIVED_CLAIM_ID: ${KEEPALIVED_CLAIM_ID:-}
+      KEEPALIVED_HEALTH_PATH: ${KEEPALIVED_HEALTH_PATH:-/api/health}
+      KEEPALIVED_SERVICE_PORTS: ${KEEPALIVED_SERVICE_PORTS:-}
+      KEEPALIVED_TIMEOUT_SECONDS: ${KEEPALIVED_TIMEOUT_SECONDS:-5}
+      KEEPALIVED_ALLOW_INSECURE_HTTP: ${KEEPALIVED_ALLOW_INSECURE_HTTP:-false}
+      KEEPALIVED_CA_FILE: ${KEEPALIVED_CA_FILE:-}
+      APP_TOKEN: ${APP_TOKEN:-}
+      APP_TOKEN_FILE: ${APP_TOKEN_FILE:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      SESSION_SECRET_FILE: ${SESSION_SECRET_FILE:-}
+      SESSION_HOURS: ${SESSION_HOURS:-12}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
+      LOGIN_WINDOW_SECONDS: ${LOGIN_WINDOW_SECONDS:-300}
+      PASSWORD_MIN_LENGTH: ${PASSWORD_MIN_LENGTH:-12}
+      TOTP_ISSUER: ${TOTP_ISSUER:-RTFM}
+      REPLICATION_TOKEN: ${REPLICATION_TOKEN:-}
+      REPLICATION_TOKEN_FILE: ${REPLICATION_TOKEN_FILE:-}
+      REPLICATION_ALLOW_INSECURE_HTTP: ${REPLICATION_ALLOW_INSECURE_HTTP:-false}
+      REPLICATION_CA_FILE: ${REPLICATION_CA_FILE:-}
+      MAX_REPLICATION_MB: ${MAX_REPLICATION_MB:-512}
+      PEERS: ${PEERS:-}
+      RETENTION_DAYS: ${RETENTION_DAYS:-90}
+      SYNC_INTERVAL_SECONDS: ${SYNC_INTERVAL_SECONDS:-300}
+      MAX_IMAGE_SIZE_MB: ${MAX_IMAGE_SIZE_MB:-10}
+      GIT_ENABLED: ${GIT_ENABLED:-true}
+      GIT_REPO_DIR: ${GIT_REPO_DIR:-/data/git}
+      GIT_AUTHOR_NAME: ${GIT_AUTHOR_NAME:-RTFM}
+      GIT_AUTHOR_EMAIL: ${GIT_AUTHOR_EMAIL:-rtfm@localhost}
+    volumes:
+      - rtfm-data:/data
+      - ${RTFM_SECRETS_PATH:-./local-data/secrets}:/run/secrets:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    stop_grace_period: 20s
+
+volumes:
+  rtfm-data:
