@@ -122,7 +122,7 @@ verificaciones de `docker inspect`, está en
 
 La plantilla preparada es [`unraid/my-RTFM.xml`](unraid/my-RTFM.xml). No contiene marcadores
 ni valores de la infraestructura original. Una plantilla Unraid no construye la imagen:
-descarga exactamente `ghcr.io/ezr43l/base-documental-s:0.4.2`. Compose conserva la ruta de
+descarga exactamente `ghcr.io/ezr43l/base-documental-s:0.4.3`. Compose conserva la ruta de
 construcción local desde código para validar una copia nueva o trabajar antes de publicar el
 artefacto.
 

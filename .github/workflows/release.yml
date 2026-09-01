@@ -308,6 +308,7 @@ jobs:
             docker run --rm --platform "$platform" --entrypoint cat \
               "${IMAGE_NAME}@${DIGEST}" /app/PYTHON_THIRD_PARTY_LICENSES.txt \
               > "$RUNNER_TEMP/PYTHON_THIRD_PARTY_LICENSES-${arch}.txt"
+            docker image rm "${IMAGE_NAME}@${DIGEST}" >/dev/null 2>&1 || true
           done
           cmp "$RUNNER_TEMP/THIRD_PARTY_NOTICES-amd64.md" "$RUNNER_TEMP/THIRD_PARTY_NOTICES-arm64.md"
           cmp "$RUNNER_TEMP/NPM_THIRD_PARTY_LICENSES-amd64.txt" "$RUNNER_TEMP/NPM_THIRD_PARTY_LICENSES-arm64.txt"

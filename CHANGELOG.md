@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3] - 2026-09-01
+
+### Corregido
+
+- La publicación multi-arquitectura elimina la copia local de cada plataforma antes de
+  validar la siguiente y espera a que GitHub haga visible el borrador de la release.
+
 ## [0.4.2] - 2026-09-01
 
 - desactivado el mantenimiento Git automático en segundo plano para que no compita con

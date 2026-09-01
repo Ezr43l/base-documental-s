@@ -62,7 +62,7 @@ FROM python-base AS runtime
 
 ARG BUILD_DATE=""
 ARG VCS_REF="unknown"
-ARG VERSION="0.4.2"
+ARG VERSION="0.4.3"
 ARG SOURCE_URL="https://github.com/Ezr43l/base-documental-s"
 ARG LICENSE="Apache-2.0"
 

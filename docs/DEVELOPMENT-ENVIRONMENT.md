@@ -74,7 +74,7 @@ La detección incorporada es una barrera conservadora, no sustituye el escaneo d
 la revisión humana. Antes del primer push se revisan también nombres, enlaces, plantillas y
 documentación; después se crea un repositorio Git nuevo dentro de este árbol y su primer
 commit. No se incorpora ningún commit, remoto, reflog, tag ni identificador del historial
-privado. La CI debe quedar verde en ese repositorio público antes de crear `v0.4.2`.
+privado. La CI debe quedar verde en ese repositorio público antes de crear `v0.4.3`.
 
 La activación final usa una operación atómica *no-replace*: `renameat2(RENAME_NOREPLACE)` en
 Linux y el contrato no-clobber de `rename` en Windows. Si el sistema o filesystem no puede
