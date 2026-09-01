@@ -1,6 +1,6 @@
 # Instalación segura de RTFM en Unraid
 
-Esta guía describe la instalación recomendada de RTFM `0.4.3` mediante la plantilla
+Esta guía describe la instalación recomendada de RTFM `0.4.4` mediante la plantilla
 `unraid/my-RTFM.xml`. Los secretos no se escriben en campos de tipo variable: se guardan en
 ficheros del host y se montan en el contenedor como solo lectura. Por tanto, `docker inspect`
 expone las rutas, pero no los valores de `APP_TOKEN`, `SESSION_SECRET`, `REPLICATION_TOKEN` ni
@@ -322,7 +322,7 @@ su retirada mediante un procedimiento separado y con las rutas absolutas revisad
 
 ## Migración desde variables directas
 
-El runtime `0.4.3` conserva las variables directas únicamente para actualizar instalaciones
+El runtime `0.4.4` conserva las variables directas únicamente para actualizar instalaciones
 anteriores. Esa vía muestra el valor en `docker inspect` y no es la configuración recomendada.
 La plantilla nueva no incluye campos directos ni secretos predeterminados.
 

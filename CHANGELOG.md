@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4] - 2026-09-01
+
+### Corregido
+
+- La publicación usa los digests propios de AMD64 y ARM64 al validar cada imagen y evita
+  repetir antes de publicar las pruebas que ya exige la CI del mismo commit.
+
 ## [0.4.3] - 2026-09-01
 
 ### Corregido

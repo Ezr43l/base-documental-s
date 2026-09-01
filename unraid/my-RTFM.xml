@@ -10,7 +10,7 @@
      despliegue deben respetar los valores que se hayan cambiado desde la GUI. -->
 <Container version="2">
   <Name>RTFM</Name>
-  <Repository>ghcr.io/ezr43l/base-documental-s:0.4.3</Repository>
+  <Repository>ghcr.io/ezr43l/base-documental-s:0.4.4</Repository>
   <Registry>https://github.com/Ezr43l/base-documental-s/pkgs/container/base-documental-s</Registry>
   <Network>host</Network>
   <MyIP/>

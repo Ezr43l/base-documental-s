@@ -1,4 +1,4 @@
-"""Prove that 0.4.0 libraries stay accessible after an in-place upgrade to 0.4.3."""
+"""Prove that 0.4.0 libraries stay accessible after an in-place upgrade to 0.4.4."""
 
 import http.cookiejar
 import json

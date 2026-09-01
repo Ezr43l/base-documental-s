@@ -157,44 +157,6 @@ jobs:
           VERSION: ${{ steps.version.outputs.value }}
         run: bash .github/scripts/release-artifact.sh resolve
 
-      - name: Build and scan both release architectures before publishing
-        if: steps.artifact.outputs.exists == 'false'
-        shell: bash
-        env:
-          LICENSE_SPDX: ${{ vars.LICENSE_SPDX }}
-        run: |
-          set -euo pipefail
-          cache_dir="$RUNNER_TEMP/trivy-cache"
-          mkdir -p "$cache_dir"
-          for platform in linux/amd64 linux/arm64; do
-            arch="${platform#*/}"
-            candidate="rtfm:release-${arch}"
-            docker buildx build --pull --platform "$platform" --load \
-              --tag "$candidate" \
-              --build-arg "VERSION=${{ steps.version.outputs.value }}" \
-              --build-arg "SOURCE_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
-              --build-arg "VCS_REF=${GITHUB_SHA}" \
-              --build-arg "LICENSE=${LICENSE_SPDX}" .
-            test "$(docker image inspect "$candidate" --format '{{.Config.User}}')" = "10001:10001"
-            test "$(docker image inspect "$candidate" --format '{{index .Config.Labels "org.opencontainers.image.version"}}')" = "${{ steps.version.outputs.value }}"
-            test "$(docker image inspect "$candidate" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$GITHUB_SHA"
-            test "$(docker image inspect "$candidate" --format '{{index .Config.Labels "org.opencontainers.image.source"}}')" = "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
-            test "$(docker image inspect "$candidate" --format '{{index .Config.Labels "org.opencontainers.image.licenses"}}')" = "$LICENSE_SPDX"
-            test "$(docker image inspect "$candidate" --format '{{index .Config.Labels "io.ezr43l.image.third-party-notices"}}')" = "/app/THIRD_PARTY_NOTICES.md"
-            test "$(docker image inspect "$candidate" --format '{{index .Config.Labels "io.ezr43l.image.npm-third-party-licenses"}}')" = "/app/NPM_THIRD_PARTY_LICENSES.txt"
-            test "$(docker image inspect "$candidate" --format '{{index .Config.Labels "io.ezr43l.image.python-third-party-licenses"}}')" = "/app/PYTHON_THIRD_PARTY_LICENSES.txt"
-            docker run --rm --platform "$platform" --entrypoint sh "$candidate" -c \
-              'test -s /app/THIRD_PARTY_NOTICES.md && test -s /app/NPM_THIRD_PARTY_LICENSES.txt && test -s /app/PYTHON_THIRD_PARTY_LICENSES.txt && test -s /app/licenses/git-COPYING && test -s /app/licenses/iproute2-COPYING'
-            bash tests/run-smoke-suite.sh "$candidate"
-            bash tests/run-https-proxy-smoke.sh "$candidate"
-            bash tests/run-ha-conflict-rejoin-smoke.sh "$candidate"
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-              -v "$cache_dir:/root/.cache" \
-              aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
-              image --skip-version-check --scanners vuln --severity CRITICAL,HIGH \
-              --exit-code 1 "$candidate"
-          done
-
       - id: meta
         if: steps.artifact.outputs.exists == 'false'
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -279,18 +241,34 @@ jobs:
           manifest="$(docker buildx imagetools inspect "${IMAGE_NAME}@${DIGEST}")"
           grep -F 'linux/amd64' <<<"$manifest"
           grep -F 'linux/arm64' <<<"$manifest"
+          manifest_json="$(docker buildx imagetools inspect "${IMAGE_NAME}@${DIGEST}" \
+            --format '{{json .Manifest}}')"
+          amd64_digest="$(jq -er \
+            '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "amd64") | .digest] |
+             if length == 1 then .[0] else error("digest amd64 no unico") end' \
+            <<<"$manifest_json")"
+          arm64_digest="$(jq -er \
+            '[.manifests[] | select(.platform.os == "linux" and .platform.architecture == "arm64") | .digest] |
+             if length == 1 then .[0] else error("digest arm64 no unico") end' \
+            <<<"$manifest_json")"
           cache_dir="$RUNNER_TEMP/trivy-cache"
           source_verify="$RUNNER_TEMP/source-verify"
           mkdir -p release-artifacts "$cache_dir" "$source_verify"
           for platform in linux/amd64 linux/arm64; do
             arch="${platform#*/}"
+            case "$arch" in
+              amd64) platform_digest="$amd64_digest" ;;
+              arm64) platform_digest="$arm64_digest" ;;
+              *) exit 1 ;;
+            esac
+            platform_image="${IMAGE_NAME}@${platform_digest}"
             docker run --rm \
               -v "$HOME/.docker:/root/.docker:ro" \
               -v "$cache_dir:/root/.cache" \
               -v "$PWD/release-artifacts:/reports" \
               aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
               image --skip-version-check --platform "$platform" --scanners vuln \
-              --severity CRITICAL,HIGH --exit-code 1 "${IMAGE_NAME}@${DIGEST}"
+              --severity CRITICAL,HIGH --exit-code 1 "$platform_image"
             docker run --rm \
               -v "$HOME/.docker:/root/.docker:ro" \
               -v "$cache_dir:/root/.cache" \
@@ -298,17 +276,16 @@ jobs:
               aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969 \
               image --skip-version-check --platform "$platform" --scanners vuln \
               --format spdx-json --output "/reports/sbom-${arch}.spdx.json" \
-              "${IMAGE_NAME}@${DIGEST}"
+              "$platform_image"
             docker run --rm --platform "$platform" --entrypoint cat \
-              "${IMAGE_NAME}@${DIGEST}" /app/THIRD_PARTY_NOTICES.md \
+              "$platform_image" /app/THIRD_PARTY_NOTICES.md \
               > "$RUNNER_TEMP/THIRD_PARTY_NOTICES-${arch}.md"
             docker run --rm --platform "$platform" --entrypoint cat \
-              "${IMAGE_NAME}@${DIGEST}" /app/NPM_THIRD_PARTY_LICENSES.txt \
+              "$platform_image" /app/NPM_THIRD_PARTY_LICENSES.txt \
               > "$RUNNER_TEMP/NPM_THIRD_PARTY_LICENSES-${arch}.txt"
             docker run --rm --platform "$platform" --entrypoint cat \
-              "${IMAGE_NAME}@${DIGEST}" /app/PYTHON_THIRD_PARTY_LICENSES.txt \
+              "$platform_image" /app/PYTHON_THIRD_PARTY_LICENSES.txt \
               > "$RUNNER_TEMP/PYTHON_THIRD_PARTY_LICENSES-${arch}.txt"
-            docker image rm "${IMAGE_NAME}@${DIGEST}" >/dev/null 2>&1 || true
           done
           cmp "$RUNNER_TEMP/THIRD_PARTY_NOTICES-amd64.md" "$RUNNER_TEMP/THIRD_PARTY_NOTICES-arm64.md"
           cmp "$RUNNER_TEMP/NPM_THIRD_PARTY_LICENSES-amd64.txt" "$RUNNER_TEMP/NPM_THIRD_PARTY_LICENSES-arm64.txt"
@@ -317,7 +294,8 @@ jobs:
           cp "$RUNNER_TEMP/THIRD_PARTY_NOTICES-amd64.md" release-artifacts/THIRD_PARTY_NOTICES.md
           cp "$RUNNER_TEMP/NPM_THIRD_PARTY_LICENSES-amd64.txt" release-artifacts/NPM_THIRD_PARTY_LICENSES.txt
           cp "$RUNNER_TEMP/PYTHON_THIRD_PARTY_LICENSES-amd64.txt" release-artifacts/PYTHON_THIRD_PARTY_LICENSES.txt
-          unset RTFM_SOURCE_IMAGE_AMD64 RTFM_SOURCE_IMAGE_ARM64
+          export RTFM_SOURCE_IMAGE_AMD64="${IMAGE_NAME}@${amd64_digest}"
+          export RTFM_SOURCE_IMAGE_ARM64="${IMAGE_NAME}@${arm64_digest}"
           bash .github/scripts/collect-alpine-copyleft-sources.sh \
             "${IMAGE_NAME}@${DIGEST}" \
             release-artifacts/alpine-copyleft-sources.tar.gz

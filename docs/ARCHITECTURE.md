@@ -109,7 +109,7 @@ Git es una proyección portable, no el bloqueo transaccional. Registra:
 
 La auditoría JSONL sigue siendo la fuente operativa para búsquedas, filtros y réplica.
 
-## Límites de v0.4.3
+## Límites de v0.4.4
 
 - `APP_TOKEN` continúa habilitado como compatibilidad heredada hasta completar su retirada;
 - las concesiones son individuales; todavía no existen grupos ni directorios externos;
